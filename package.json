@@ -32,7 +32,7 @@
 	"devDependencies": {
 		"@types/ms": "^0.7.32",
 		"bun-types": "latest",
-		"prisma": "^5.7.1",
+		"prisma": "^6.0.0",
 		"typescript": "^5.3.3"
 	},
 	"trustedDependencies": [
