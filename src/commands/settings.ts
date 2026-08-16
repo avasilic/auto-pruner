@@ -10,6 +10,8 @@ import {
 	GUILD_REQUIRED_PERMISSIONS,
 	GUILD_SETTINGS,
 	LOG_CHANNEL_REQUIRED_PERMISSIONS,
+	PRUNE_REQUIRES_ADMIN_MESSAGE,
+	pruneRequiresAdministrator,
 	type RolesStringParserReturn
 } from "../util/misc.js"
 import { parseInterval } from "../util/parseInterval.js"
@@ -207,6 +209,13 @@ export default {
 					.toArray()
 					.join(", ")}.`
 			)
+		}
+
+		if (
+			pruneRequiresAdministrator(interaction.guild) &&
+			!guildPermissions.has(PermissionsBitField.Flags.Administrator)
+		) {
+			lines.push("", `:warning: ${PRUNE_REQUIRES_ADMIN_MESSAGE}`)
 		}
 
 		await interaction.editReply({
