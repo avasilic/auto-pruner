@@ -174,3 +174,10 @@ dist
 
 # Finder (MacOS) folder config
 .DS_Store
+
+# Generated Prisma Client
+src/generated/
+
+# Database dumps / exports
+*.sql
+!prisma/migrations/**/*.sql

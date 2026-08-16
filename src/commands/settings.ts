@@ -1,12 +1,12 @@
 import {
 	ApplicationCommandOptionType,
 	type ChatInputCommandInteraction,
-	EmbedBuilder,
-	PermissionsBitField
+	MessageFlags,
+	PermissionsBitField,
+	TextDisplayBuilder
 } from "discord.js"
 import { getGuildData, updateGuildSettings } from "../util/database.js"
 import {
-	COLORS,
 	GUILD_REQUIRED_PERMISSIONS,
 	GUILD_SETTINGS,
 	LOG_CHANNEL_REQUIRED_PERMISSIONS,
@@ -67,25 +67,24 @@ export default {
 			await interaction.reply({
 				content:
 					"Something went wrong while executing that command. If this keeps happening please report it on support server (run /about for the link to it).",
-				ephemeral: true
+				flags: MessageFlags.Ephemeral
 			})
 			return
 		}
 
 		const enabled = interaction.options.getBoolean("enabled")
-		let interval: string | Date | null =
-			interaction.options.getString("interval")
+		const intervalHuman = interaction.options.getString("interval")
 		const days = interaction.options.getInteger("days")
-		let roles: RolesStringParserReturn | string | null =
-			interaction.options.getString("roles")
+		const rolesInput = interaction.options.getString("roles")
 		const channel = interaction.options.getChannel("channel")
 
 		await interaction.deferReply()
 
 		const me = await interaction.guild.members.fetchMe()
 
-		if (roles) {
-			roles = parseRoles(roles)
+		let roles: RolesStringParserReturn | undefined
+		if (rolesInput) {
+			roles = parseRoles(rolesInput)
 			if (!roles.reset && roles.roles.length === 0) {
 				await interaction.editReply({
 					content:
@@ -94,23 +93,20 @@ export default {
 				return
 			}
 
-			// Check that the roles are valid
-			if (roles.roles.length > 0) {
-				const invalidRoles = roles.roles.filter(
-					(role) =>
-						!interaction.guild.roles.cache.has(role) ||
-						role === interaction.guildId
-				)
+			const invalidRoles = roles.roles.filter(
+				(role) =>
+					!interaction.guild.roles.cache.has(role) ||
+					role === interaction.guildId
+			)
 
-				if (invalidRoles.length > 0) {
-					await interaction.editReply({
-						content: `The following roles are invalid and do not exist: ${invalidRoles
-							.map((role) => `<@&${role}>`)
-							.join(", ")}.`,
-						allowedMentions: { roles: [] }
-					})
-					return
-				}
+			if (invalidRoles.length > 0) {
+				await interaction.editReply({
+					content: `The following roles cannot be used: ${invalidRoles
+						.map((role) => `<@&${role}>`)
+						.join(", ")}.`,
+					allowedMentions: { parse: [] }
+				})
+				return
 			}
 		}
 
@@ -131,15 +127,17 @@ export default {
 			}
 		}
 
-		if (interval) {
-			if (!interval.startsWith("every ")) {
+		let interval: Date | undefined
+		if (intervalHuman) {
+			if (!intervalHuman.startsWith("every ")) {
 				await interaction.editReply({
 					content: "The interval must start with `every`. E.g. `every 3 days`."
 				})
 				return
 			}
-			interval = new Date(parseInterval(interval))
-			if (!interval || Number.isNaN(interval.getTime())) {
+
+			const parsed = parseInterval(intervalHuman)
+			if (parsed === undefined || Number.isNaN(parsed)) {
 				await interaction.editReply({
 					content:
 						"The interval must be a valid time interval. E.g. `every 3 days`."
@@ -148,7 +146,7 @@ export default {
 			}
 
 			// < 1 day
-			if (interval.getTime() < 86_400_000) {
+			if (parsed < 86_400_000) {
 				await interaction.editReply({
 					content: "The interval must be at least 1 day."
 				})
@@ -156,49 +154,43 @@ export default {
 			}
 
 			// >= 10 years
-			if (interval.getTime() >= 365 * 10 * 86_400_000) {
+			if (parsed >= 365 * 10 * 86_400_000) {
 				await interaction.editReply({
 					content:
 						"Really? You want to prune every 10+ years? The interval must be less than 10 years."
 				})
 				return
 			}
+
+			interval = new Date(parsed)
 		}
 
-		await updateGuildSettings(interaction.guild.id, {
-			id: interaction.guildId,
-			enabled: enabled ?? undefined,
-			interval: interval ?? undefined,
-			intervalHuman: interaction.options.getString("interval") ?? undefined,
-			days: days ?? undefined,
-			roles: roles as RolesStringParserReturn | undefined,
-			logChannelId: channel?.id
-		}).catch(async (err) => {
-			await interaction.editReply({
-				content: `An error occurred while updating the guild settings. ${
-					err.message ? `\n\n${err.message}` : ""
-				} If this keeps happening please report it on support server (run /about for the link to it).`
+		try {
+			await updateGuildSettings(interaction.guild.id, {
+				id: interaction.guildId,
+				enabled: enabled ?? undefined,
+				interval,
+				intervalHuman: intervalHuman ?? undefined,
+				days: days ?? undefined,
+				roles,
+				logChannelId: channel?.id
 			})
-		})
+		} catch (error) {
+			await interaction.editReply({
+				content: `An error occurred while updating the guild settings.${
+					error instanceof Error ? `\n\n${error.message}` : ""
+				}\n\nIf this keeps happening please report it on support server (run /about for the link to it).`
+			})
+			return
+		}
 
 		const guildData = await getGuildData(interaction.guild.id)
 
-		const settingsEmbed = new EmbedBuilder()
-			.setTitle("Server Settings")
-			.setAuthor({
-				name: interaction.guild.name,
-				iconURL: interaction.guild.iconURL() ?? ""
-			})
-			.setColor(COLORS.embed)
-
-		// Process the settings and generate description
+		const lines = ["### Server Settings"]
 		for (const setting of GUILD_SETTINGS) {
-			if (!settingsEmbed.data.description) settingsEmbed.data.description = ""
-			settingsEmbed.data.description += `**${
-				setting.name
-			}:** ${getSettingDescription(guildData, setting)}${
-				setting.name === "roles" ? "" : "\n"
-			}`
+			lines.push(
+				`**${setting.name}:** ${getSettingDescription(guildData, setting)}`
+			)
 		}
 
 		const guildPermissions = me.permissions
@@ -207,22 +199,20 @@ export default {
 				(permission) => !guildPermissions.has(permission)
 			)
 
-			const descriptionSuffix = `:warning: I am missing the following permission${
-				missing.length === 1 ? "" : "s"
-			} in this server: ${new PermissionsBitField(missing)
-				.toArray()
-				.join(", ")}.`
-
-			settingsEmbed.setDescription(
-				`${settingsEmbed.data.description}\n${descriptionSuffix}`
+			lines.push(
+				"",
+				`:warning: I am missing the following permission${
+					missing.length === 1 ? "" : "s"
+				} in this server: ${new PermissionsBitField(missing)
+					.toArray()
+					.join(", ")}.`
 			)
 		}
 
-		settingsEmbed.data.description = settingsEmbed.data.description
-			?.replaceAll(/undefined|null/gim, "Not set")
-			.replaceAll("true", "✅")
-			.replaceAll("false", "❌")
-
-		await interaction.editReply({ embeds: [settingsEmbed] })
+		await interaction.editReply({
+			components: [new TextDisplayBuilder().setContent(lines.join("\n"))],
+			flags: MessageFlags.IsComponentsV2,
+			allowedMentions: { parse: [] }
+		})
 	}
 } satisfies Command

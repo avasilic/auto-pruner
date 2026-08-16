@@ -42,4 +42,4 @@ We may update this Privacy Policy periodically. Any changes will be posted on th
 
 **8. Contact Information**
 
-For any questions or concerns regarding this Privacy Policy, please contact us at hello@nettech.dev.
+For any questions or concerns regarding this Privacy Policy, please contact us at aleksandar [at] avasilic [dot] com.

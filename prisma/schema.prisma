@@ -1,14 +1,14 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "cockroachdb"
-  url      = env("DATABASE_URL")
+  provider = "postgresql"
 }
 
 model Guild {
-  id            String    @unique
+  id            String    @id
   enabled       Boolean   @default(false)
   interval      DateTime?
   intervalHuman String?
@@ -16,14 +16,12 @@ model Guild {
   roles         Role[]
   logChannelId  String?
   lastPrune     DateTime?
-
-  @@index([id])
 }
 
 model Role {
-  id      String @unique
+  id      String @id
   guild   Guild  @relation(fields: [guildId], references: [id], onDelete: Cascade)
   guildId String
 
-  @@index([id])
+  @@index([guildId])
 }

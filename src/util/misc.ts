@@ -7,8 +7,6 @@ export const LOG_CHANNEL_REQUIRED_PERMISSIONS: readonly bigint[] = [
 	PermissionsBitField.Flags.SendMessages,
 	// To be able to send log messages in the logging channel if it is a thread.
 	PermissionsBitField.Flags.SendMessagesInThreads,
-	// To be able to send log embeds in the logging channel.
-	PermissionsBitField.Flags.EmbedLinks,
 	// To be able to attach files to the log messages (future feature).
 	PermissionsBitField.Flags.AttachFiles
 ] as const
@@ -20,8 +18,6 @@ export const GUILD_REQUIRED_PERMISSIONS: readonly bigint[] = [
 	PermissionsBitField.Flags.SendMessages,
 	// To be able to send log messages in the logging channel if it is a thread.
 	PermissionsBitField.Flags.SendMessagesInThreads,
-	// To be able to send log embeds in the logging channel.
-	PermissionsBitField.Flags.EmbedLinks,
 	// To be able to attach files to the log messages (future feature).
 	PermissionsBitField.Flags.AttachFiles,
 	// To be able to see if the guild was manually pruned (future feature).
@@ -30,7 +26,7 @@ export const GUILD_REQUIRED_PERMISSIONS: readonly bigint[] = [
 	PermissionsBitField.Flags.ManageGuild,
 	// To be able to prune members.
 	PermissionsBitField.Flags.KickMembers
-]
+] as const
 
 export interface Setting {
 	name: string
@@ -58,11 +54,6 @@ export interface ScheduledPruneInfo {
 	days: number
 	date: Date
 }
-
-export const COLORS = {
-	red: 0xff3b30,
-	embed: 0x2c2d31
-} as const
 
 export const GUILD_SETTINGS: readonly Setting[] = [
 	{

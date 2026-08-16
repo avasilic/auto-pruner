@@ -1,0 +1,50 @@
+x-database-url: &database-url
+  DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-autopruner}:${POSTGRES_PASSWORD:-autopruner}@database:5432/${POSTGRES_DB:-autopruner}}
+
+services:
+  database:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-autopruner}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-autopruner}
+      POSTGRES_DB: ${POSTGRES_DB:-autopruner}
+    volumes:
+      - database:/var/lib/postgresql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-autopruner} -d ${POSTGRES_DB:-autopruner}"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  migrate:
+    build: .
+    command: ["bun", "run", "db:migrate"]
+    restart: "no"
+    depends_on:
+      database:
+        condition: service_healthy
+    environment: *database-url
+
+  bot:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      database:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *database-url
+      DISCORD_TOKEN: ${DISCORD_TOKEN:?DISCORD_TOKEN is required}
+      APPLICATION_ID: ${APPLICATION_ID:?APPLICATION_ID is required}
+      AXIOM_ORG_ID: ${AXIOM_ORG_ID:-}
+      AXIOM_DATASET: ${AXIOM_DATASET:-}
+      AXIOM_TOKEN: ${AXIOM_TOKEN:-}
+
+volumes:
+  database:

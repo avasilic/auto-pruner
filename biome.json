@@ -1,12 +1,12 @@
 {
 	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
 	"files": {
-		"ignore": ["dist"]
+		"includes": ["**", "!**/dist", "!src/generated"]
 	},
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true,
+			"preset": "recommended",
 			"correctness": {
 				"noUnusedVariables": "error"
 			}
@@ -15,10 +15,8 @@
 	"javascript": {
 		"formatter": {
 			"semicolons": "asNeeded",
-			"trailingComma": "none"
+			"trailingCommas": "none"
 		}
 	},
-	"organizeImports": {
-		"enabled": true
-	}
+	"assist": { "actions": { "source": { "organizeImports": "on" } } }
 }
