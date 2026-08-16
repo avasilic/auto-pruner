@@ -36,5 +36,4 @@ provided "as is" without any warranties, express or implied.
 
 **6. Contact Information**
 
-For any questions or concerns regarding these ToS, please contact us at
-hello@nettech.dev.
+For any questions or concerns regarding these ToS, please contact us at aleksandar [at] avasilic [dot] com.

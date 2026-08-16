@@ -1,0 +1,16 @@
+.git
+.github
+node_modules
+src/generated
+.env
+.env.*
+!.env.example
+*.md
+*.MD
+.editorconfig
+.gitignore
+biome.json
+renovate.json
+Dockerfile
+.dockerignore
+docker-compose.yml

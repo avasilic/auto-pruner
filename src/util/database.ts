@@ -1,6 +1,13 @@
-import { type Prisma, PrismaClient } from "@prisma/client"
+import { PrismaPg } from "@prisma/adapter-pg"
+import type { Prisma } from "../generated/prisma/client.js"
+import { PrismaClient } from "../generated/prisma/client.js"
+
+const adapter = new PrismaPg({
+	connectionString: Bun.env.DATABASE_URL
+})
 
 export const prisma = new PrismaClient({
+	adapter,
 	errorFormat: "pretty"
 })
 
@@ -36,29 +43,40 @@ export const getGuildData = async (guildId: string) => {
  */
 export const updateGuildSettings = async (
 	guildId: string,
-	settings: Prisma.GuildCreateInput & {
-		roles: { reset: boolean; roles: string[] } | undefined
+	settings: Omit<Prisma.GuildCreateInput, "roles"> & {
+		roles?: { reset: boolean; roles: string[] }
 	}
 ) => {
-	if (settings.roles) {
-		if (settings.roles.reset) {
+	const { roles, ...upsertSettings } = settings
+
+	const guild = await prisma.guild.upsert({
+		where: { id: guildId },
+		update: upsertSettings,
+		create: { ...upsertSettings, id: guildId }
+	})
+
+	if (roles) {
+		if (roles.reset) {
 			await resetRolesForGuild(guildId)
-		} else if (settings.roles.roles) {
-			await syncRolesForGuild(guildId, settings.roles.roles)
+		} else {
+			await syncRolesForGuild(guildId, roles.roles)
 		}
 	}
 
-	// Prepare settings for upsert operation
-	const upsertSettings: Prisma.GuildCreateInput = {
-		...settings,
-		roles: undefined
-	}
+	return guild
+}
 
-	return prisma.guild.upsert({
-		where: { id: guildId },
-		update: upsertSettings,
-		create: { ...upsertSettings }
+/**
+ * Delete a guild and its associated roles from the database.
+ *
+ * @param guildId - The ID of the guild to delete.
+ * @returns Whether a record was deleted.
+ */
+export const deleteGuildData = async (guildId: string) => {
+	const { count } = await prisma.guild.deleteMany({
+		where: { id: guildId }
 	})
+	return count > 0
 }
 
 /**
