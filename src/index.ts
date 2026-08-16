@@ -5,7 +5,7 @@ import { registerEvents } from "./util/registerEvents.js"
 
 // Initialize the client
 const client = new Client({
-	intents: [GatewayIntentBits.Guilds],
+	intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 	makeCache: Options.cacheWithLimits({
 		AutoModerationRuleManager: 0,
 		UserManager: 10, // "... needs to have 10 or so for safety" - discord js people
