@@ -10,6 +10,7 @@
 - Add a `Dockerfile` and `docker-compose.yml` that run AutoPruner alongside a PostgreSQL database. Migrations are now applied by a one-shot `migrate` container.
 - Add committed database migrations under `prisma/migrations`, applied with the new `bun run db:migrate` script.
 - Fix the invite link requesting the wrong permissions. It was missing `Manage Server` and `View Audit Log`.
+- Detect the `PRUNE_REQUIRES_ADMIN` guild feature. Discord shipped this on 2026-08-12 (https://github.com/discord/discord-api-docs/pull/8540).
 - Fix the prune CRON aborting every remaining guild when one guild could not be fetched. Guilds that can no longer be fetched are now deleted from the database instead.
 - Fix roles being written to the database before the guild row existed, which made the first `/settings` call that set roles fail on a foreign key constraint.
 - Fix `/settings` reporting success after the settings failed to save.

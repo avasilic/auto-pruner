@@ -1,4 +1,15 @@
-import { PermissionsBitField, type Snowflake } from "discord.js"
+import { type Guild, PermissionsBitField, type Snowflake } from "discord.js"
+
+const PRUNE_REQUIRES_ADMIN = "PRUNE_REQUIRES_ADMIN"
+
+/**
+ * Whether a guild has opted into requiring Administrator to prune members.
+ */
+export const pruneRequiresAdministrator = (guild: Guild) =>
+	(guild.features as string[]).includes(PRUNE_REQUIRES_ADMIN)
+
+export const PRUNE_REQUIRES_ADMIN_MESSAGE =
+	"This server has **require Administrator to prune** turned on, so Discord will only let me prune with the Administrator permission. Either grant me Administrator, or turn that requirement off in Settings > Safety Setup > Permissions > Restrict member prune to admins."
 
 export const LOG_CHANNEL_REQUIRED_PERMISSIONS: readonly bigint[] = [
 	// To be able to see the logging channel.

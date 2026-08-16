@@ -14,6 +14,10 @@ import {
 } from "../util/database.js"
 import { logger } from "../util/logger.js"
 import {
+	PRUNE_REQUIRES_ADMIN_MESSAGE,
+	pruneRequiresAdministrator
+} from "../util/misc.js"
+import {
 	postPruneLogErrorMessage,
 	postPruneLogSuccessMessage
 } from "../util/prune.js"
@@ -136,6 +140,9 @@ const pruneJob = async (client: Client) => {
 			failuresByCode.set(code, (failuresByCode.get(code) ?? 0) + 1)
 
 			const me = await clientGuild.members.fetchMe().catch(() => null)
+			const requiresAdministrator = pruneRequiresAdministrator(clientGuild)
+			const hasAdministrator =
+				me?.permissions.has(PermissionsBitField.Flags.Administrator) ?? null
 
 			logger.error(
 				{
@@ -145,7 +152,9 @@ const pruneJob = async (client: Client) => {
 					hasKickMembers:
 						me?.permissions.has(PermissionsBitField.Flags.KickMembers) ?? null,
 					hasManageGuild:
-						me?.permissions.has(PermissionsBitField.Flags.ManageGuild) ?? null
+						me?.permissions.has(PermissionsBitField.Flags.ManageGuild) ?? null,
+					hasAdministrator,
+					requiresAdministrator
 				},
 				`Error pruning guild ${guildSetting.id}`
 			)
@@ -165,7 +174,9 @@ const pruneJob = async (client: Client) => {
 				await postPruneLogErrorMessage(
 					clientGuild,
 					guildSetting.logChannelId,
-					"I do not have permission to prune members in this server. Please check that I have the 'Kick Members' and 'Manage Server' permissions.",
+					requiresAdministrator && hasAdministrator !== true
+						? PRUNE_REQUIRES_ADMIN_MESSAGE
+						: "I do not have permission to prune members in this server. Please check that I have the 'Kick Members' and 'Manage Server' permissions.",
 					false
 				)
 				continue
