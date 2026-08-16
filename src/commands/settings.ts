@@ -186,7 +186,7 @@ export default {
 
 		const guildData = await getGuildData(interaction.guild.id)
 
-		const lines = ["### Server Settings"]
+		const lines = ["## Server Settings"]
 		for (const setting of GUILD_SETTINGS) {
 			lines.push(
 				`**${setting.name}:** ${getSettingDescription(guildData, setting)}`

@@ -60,7 +60,7 @@ export const postPruneLogSuccessMessage = async (
 
 	const message = new TextDisplayBuilder().setContent(
 		[
-			"### Scheduled Prune Successful",
+			"## Scheduled Prune Successful",
 			`Pruned ${
 				prune.pruneCount ?? "an unknown amount of"
 			} members from **${guild.name}** <t:${Math.round(
@@ -94,7 +94,7 @@ export const postPruneLogErrorMessage = async (
 
 	const message = new TextDisplayBuilder().setContent(
 		[
-			"### Scheduled Prune Unsuccessful",
+			"## Scheduled Prune Unsuccessful",
 			`An error occurred while pruning **${guild.name}**.`,
 			"",
 			showInCodeBlock ? `\`\`\`\n${errorMessage}\n\`\`\`` : errorMessage
